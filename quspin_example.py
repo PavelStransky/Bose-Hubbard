@@ -8,11 +8,11 @@ import matplotlib.pyplot as plt
 
 import time
 
-L = 5           # number of sites
-N = 30         # number of boson excitations
+L = 4           # number of sites
+N = 50         # number of boson excitations
 
-J = 1.0
-U = -5.0
+J = 0.1
+U = 1.0
 
 k = 0           # momentum sector (integer from 0 to L-1)
 parity = 1      # parity sector (integer: -1, 1)
@@ -47,9 +47,10 @@ plt.show()
 
 entanglement_entropy = []
 for a in alive_it(range(len(E))):
-    entanglement_entropy.append(float(basis.ent_entropy(V[a], sub_sys_A=[1,2,3])['Sent_A']))
+    entanglement_entropy.append(float(basis.ent_entropy(V[a], sub_sys_A=[1,2])['Sent_A']))
 
 plt.scatter(E, entanglement_entropy, s=1)
 plt.show()
 
-np.savetxt(f"R output k={k}, parity={parity}.csv", E / N)
+np.savetxt(f"L={L} N={N} J={J} U={U} k={k}, parity={parity}.csv", E / N)
+np.savetxt(f"L={L} N={N} J={J} U={U} k={k}, parity={parity} entropy.csv", entanglement_entropy)
