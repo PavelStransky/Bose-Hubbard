@@ -14,65 +14,70 @@ def entropy(basis, V, sub_sys_A):
 
 
 if __name__ == "__main__":
-    L = 4           # number of sites
-    N = 50         # number of boson excitations
-
-    J = 0.2
+    L = 3          # number of sites
+    N = 200         # number of boson excitations
     U = 1.0
 
     k = 0           # momentum sector (integer from 0 to L-1)
     parity = 1      # parity sector (integer: -1, 1)
 
-    basis = boson_basis_1d(L, Nb=N, sps=N + 1, kblock=k, pblock=parity)
-    print(basis)
+    for J in np.arange(0, 2, 0.05):
 
-    hopping = [[-J, i, (i + 1) % L] for i in range(L)]  # periodic hopping
-    hubbard = [[U / N, i, i] for i in range(L)]         # on-site interaction
-    chemical = [[-U / N, i] for i in range(L)]          # chemical potential
+        basis = boson_basis_1d(L, Nb=N, sps=N + 1, kblock=k, pblock=parity)
+        print(basis)
 
-    static = [["+-", hopping], ["-+", hopping], ["n", chemical], ["nn", hubbard]]
-    H = hamiltonian(static, [], basis=basis, dtype=np.float64)
+        hopping = [[-J, i, (i + 1) % L] for i in range(L)]  # periodic hopping
+        hubbard = [[U / N, i, i] for i in range(L)]         # on-site interaction
+        chemical = [[-U / N, i] for i in range(L)]          # chemical potential
 
-    start_time = time.time()
-    E, V = H.eigh()
+        static = [["+-", hopping], ["-+", hopping], ["n", chemical], ["nn", hubbard]]
+        H = hamiltonian(static, [], basis=basis, dtype=np.float64)
 
-    E /= N
+        start_time = time.time()
+        E, V = H.eigh()
 
-    print(f"{len(E)} eigenvalues calculated in {time.time() - start_time:.2f} seconds.")
+        E /= N
 
-    ipr = [1 / sum(abs(v)**4 for v in vec) / len(vec) for vec in alive_it(V.T)]
+        print(f"{len(E)} eigenvalues calculated in {time.time() - start_time:.2f} seconds.")
 
-    entanglement_entropy = []
-    with multiprocessing.Pool(processes=10) as pool, alive_bar(len(E)) as bar:
-        entropy_object = []
+        ipr = [1 / sum(abs(v)**4 for v in vec) / len(vec) for vec in alive_it(V.T)]
 
-        def update_entropy_object(_):            
-            bar()
+        entanglement_entropy = []
+        with multiprocessing.Pool(processes=10) as pool, alive_bar(len(E)) as bar:
+            entropy_object = []
 
-        for args in [(basis, V[i], [1, 2, 3]) for i in range(len(E))]:
-            r = pool.apply_async(entropy, args=args, callback=update_entropy_object)
-            entropy_object.append(r)
+            def update_entropy_object(_):            
+                bar()
 
-        pool.close()
-        pool.join()
+            for args in [(basis, V[i], list(range(L-1))) for i in range(len(E))]:
+                r = pool.apply_async(entropy, args=args, callback=update_entropy_object)
+                entropy_object.append(r)
 
-        entanglement_entropy = [r.get() for r in entropy_object]
+            pool.close()
+            pool.join()
 
-    entanglement_entropy = np.array(entanglement_entropy)
+            entanglement_entropy = [r.get() for r in entropy_object]
 
-    np.savetxt(f"L={L} N={N} J={J} U={U} k={k}, parity={parity}.csv", E / N)
-    np.savetxt(f"L={L} N={N} J={J} U={U} k={k}, parity={parity} entropy.csv", entanglement_entropy)
-    np.savetxt(f"L={L} N={N} J={J} U={U} k={k}, parity={parity} ipr.csv", ipr)
+        entanglement_entropy = np.array(entanglement_entropy)
 
-    plt.hist(E, bins=100, density=True)
-    plt.xlabel("Energy")
-    plt.ylabel("Rho")
-    plt.show()
+        np.savetxt(f"L={L} N={N} J={J} U={U} k={k}, parity={parity}.csv", E / N)
+        np.savetxt(f"L={L} N={N} J={J} U={U} k={k}, parity={parity} entropy.csv", entanglement_entropy)
+        np.savetxt(f"L={L} N={N} J={J} U={U} k={k}, parity={parity} ipr.csv", ipr)
 
-    plt.scatter(E, ipr, s=1)
-    plt.xlabel("Energy")
-    plt.ylabel("Inverse Participation Ratio (IPR)")
-    plt.show()
+        plt.figure()
+        plt.hist(E, bins=100, density=True)
+        plt.xlabel("Energy")
+        plt.ylabel("Rho")
+        plt.savefig(f"L={L} N={N} J={J} U={U} k={k}, parity={parity} rho.png")
 
-    plt.scatter(E, entanglement_entropy, s=1)
-    plt.show()
+        plt.figure()
+        plt.scatter(E, ipr, s=1)
+        plt.xlabel("Energy")
+        plt.ylabel("Inverse Participation Ratio (IPR)")
+        plt.savefig(f"L={L} N={N} J={J} U={U} k={k}, parity={parity} ipr.png")
+
+        plt.figure()
+        plt.scatter(E, entanglement_entropy, s=1)
+        plt.xlabel("Energy")
+        plt.ylabel("Entanglement Entropy")
+        plt.savefig(f"L={L} N={N} J={J} U={U} k={k}, parity={parity} entropy.png")
