@@ -19,7 +19,7 @@ if __name__ == "__main__":
     N = 12         # number of boson excitations
     U = 1.0
 
-    for J in np.arange(0.05, 0.5, 0.05):
+    for J in np.arange(-1, 1, 0.05):
         iprs = []
         entanglement_entropies = []
         es = []
@@ -70,9 +70,9 @@ if __name__ == "__main__":
 
                 infos.append(f"{k}{"+" if parity == 1 else "-"}")
 
-                np.savetxt(PATH + f"L={L} N={N} J={J} U={U} k={k} parity={parity}.csv", es[-1])
-                np.savetxt(PATH + f"L={L} N={N} J={J} U={U} k={k} parity={parity} entropy.csv", entanglement_entropies[-1])
-                np.savetxt(PATH + f"L={L} N={N} J={J} U={U} k={k} parity={parity} ipr.csv", iprs[-1])
+                np.savetxt(PATH + f"L={L} N={N} J={J:.2f} U={U} k={k} parity={parity}.csv", es[-1])
+                np.savetxt(PATH + f"L={L} N={N} J={J:.2f} U={U} k={k} parity={parity} entropy.csv", entanglement_entropies[-1])
+                np.savetxt(PATH + f"L={L} N={N} J={J:.2f} U={U} k={k} parity={parity} ipr.csv", iprs[-1])
 
         plt.figure(figsize=(10, 6))
         energies = []
